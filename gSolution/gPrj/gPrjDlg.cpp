@@ -106,13 +106,13 @@ BOOL CgPrjDlg::OnInitDialog()
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
 	SetIcon(m_hIcon, TRUE);			// 큰 아이콘을 설정합니다.
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
-
+	
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	//ShowWindow(SW_SHOWMAXIMIZED);
 	MoveWindow(0, 0, 1280, 800);
 	m_pDlgImage = new CDlgImage;
-	m_pDlgImage->Create(IDD_CDlgImage , this);
+	m_pDlgImage->Create(IDD_CDlgImage, this);
 	m_pDlgImage->ShowWindow(SW_SHOW);
-	m_pDlgImage->MoveWindow(0, 0, 640, 480);
 
 	m_pDlgImgResult = new CDlgImage;
 	m_pDlgImgResult->Create(IDD_CDlgImage, this);
@@ -196,25 +196,27 @@ void CgPrjDlg::OnBnClickedBtnTest()
 	int nPitch = m_pDlgImage->m_image.GetPitch();
 	memset(fm, 0xff, nWidth * nHeight);
 
-	for (int k = 0; k < 100; k++) {
+	for (int k = 0; k < MAX_POINT; k++) {
 		int x = rand() % nWidth;
 		int y = rand() % nHeight;
-		fm[y * nPitch + x] = 0;
+		fm[y * nPitch + x] = rand() % 0xff;
 	}
 
 	int nIndex = 0;
+	int nTh = 100;
 	for (int j = 0; j < nHeight; j++) {
 		for (int i = 0; i < nWidth; i++) {
-			if (fm[j * nPitch + i] == 0) {
-				if (m_pDlgImgResult->m_nDataCount <= 100){
+			if (fm[j * nPitch + i] > nTh) {
+				if (m_pDlgImgResult->m_nDataCount < MAX_POINT) {
+					//cout << nIndex << ":" << i << "," << j << endl;
 					m_pDlgImgResult->m_ptData[nIndex].x = i;
 					m_pDlgImgResult->m_ptData[nIndex].y = j;
 					m_pDlgImgResult->m_nDataCount = ++nIndex;
 				}
-				
 			}
 		}
 	}
+
 	m_pDlgImage->Invalidate();
 	m_pDlgImgResult->Invalidate();
 }

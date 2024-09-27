@@ -90,9 +90,10 @@ void CDlgImage::InitImage() {
 	memset(fm, 0xff, nWidth * nHehight);
 }
 
+
 void CDlgImage::drawData(CDC* pDC) {
 	CPen pen;
-	pen.CreatePen(PS_SOLID, 3, RGB(0xff, 0, 0));
+	pen.CreatePen(PS_SOLID, 3, COLOR_GREEN);
 	CPen* pOldPen = pDC->SelectObject(&pen);
 
 	CRect rect;
