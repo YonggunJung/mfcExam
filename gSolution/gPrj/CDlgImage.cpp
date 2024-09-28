@@ -72,8 +72,8 @@ void CDlgImage::OnPaint()
 }
 
 void CDlgImage::InitImage() {
-	int nWidth = 640;
-	int nHehight = 480;
+	int nWidth = 4096*8;
+	int nHehight = 4096*8;
 	int nBpp = 8;
 
 	m_image.Create(nWidth, -nHehight, nBpp);
@@ -93,13 +93,13 @@ void CDlgImage::InitImage() {
 
 void CDlgImage::drawData(CDC* pDC) {
 	CPen pen;
-	pen.CreatePen(PS_SOLID, 3, COLOR_GREEN);
+	pen.CreatePen(PS_SOLID, 2, COLOR_RED);
 	CPen* pOldPen = pDC->SelectObject(&pen);
 
 	CRect rect;
 	for (int i = 0; i < m_nDataCount; i++) {
 		rect.SetRect(m_ptData[i], m_ptData[i]);
-		rect.InflateRect(2, 2);
+		rect.InflateRect(1, 1);
 		pDC->Ellipse(rect);
 	}
 	pDC->SelectObject(pOldPen);

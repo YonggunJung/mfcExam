@@ -73,6 +73,10 @@ BEGIN_MESSAGE_MAP(CgPrjDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_DESTROY()
 	ON_BN_CLICKED(IDC_BTN_TEST, &CgPrjDlg::OnBnClickedBtnTest)
+	ON_BN_CLICKED(IDC_BTN_PROCESS, &CgPrjDlg::OnBnClickedBtnProcess)
+	ON_BN_CLICKED(IDC_BTN_MAKE_PATTERN, &CgPrjDlg::OnBnClickedBtnMakePattern)
+	ON_BN_CLICKED(IDC_BTN_GET_DATA, &CgPrjDlg::OnBnClickedBtnGetData)
+	ON_BN_CLICKED(IDC_BTN_THREAD, &CgPrjDlg::OnBnClickedBtnThread)
 END_MESSAGE_MAP()
 
 
@@ -194,12 +198,12 @@ void CgPrjDlg::OnBnClickedBtnTest()
 	int nWidth = m_pDlgImage->m_image.GetWidth();
 	int nHeight = m_pDlgImage->m_image.GetHeight();
 	int nPitch = m_pDlgImage->m_image.GetPitch();
-	memset(fm, 0xff, nWidth * nHeight);
+	memset(fm, 0, nWidth * nHeight);
 
 	for (int k = 0; k < MAX_POINT; k++) {
 		int x = rand() % nWidth;
 		int y = rand() % nHeight;
-		fm[y * nPitch + x] = rand() % 0xff;
+		fm[y * nPitch + x] = (rand() % 250)+1;
 	}
 
 	int nIndex = 0;
@@ -219,4 +223,133 @@ void CgPrjDlg::OnBnClickedBtnTest()
 
 	m_pDlgImage->Invalidate();
 	m_pDlgImgResult->Invalidate();
+}
+
+#include "CProcess.h"
+#include <chrono>
+
+using namespace std;
+using namespace chrono;
+
+void CgPrjDlg::OnBnClickedBtnProcess()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CProcess process;
+
+	// 처음 시간에서 나중 시간을 뺀다
+	auto start = std::chrono::system_clock::now();
+	int nRet = process.getStarInfo(&m_pDlgImage->m_image, 100);
+	auto end = std::chrono::system_clock::now();
+	auto millisec = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+	cout << nRet << "\t" << millisec.count() << "ms" << endl;
+}
+
+
+void CgPrjDlg::OnBnClickedBtnMakePattern()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	unsigned char* fm = (unsigned char*)m_pDlgImage->m_image.GetBits();
+	int nWidth = m_pDlgImage->m_image.GetWidth();
+	int nHeight = m_pDlgImage->m_image.GetHeight();
+	int nPitch = m_pDlgImage->m_image.GetPitch();
+	memset(fm, 0, nWidth * nHeight);
+
+	CRect rect(100, 100, 200, 200);
+	for (int j = rect.top; j < rect.bottom; j++) {
+		for (int i = rect.left; i < rect.right; i++) {
+			fm[j * nPitch + i] = rand() % 0xff;
+		}
+	}
+	m_pDlgImage->Invalidate();
+}
+
+
+void CgPrjDlg::OnBnClickedBtnGetData()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	unsigned char* fm = (unsigned char*)m_pDlgImage->m_image.GetBits();
+	int nWidth = m_pDlgImage->m_image.GetWidth();
+	int nHeight = m_pDlgImage->m_image.GetHeight();
+	int nPitch = m_pDlgImage->m_image.GetPitch();
+
+	int nTh = 0x80;
+	CRect rect(0, 0, nWidth, nHeight);
+	int nSumX = 0;
+	int nSumY = 0;
+	int nCount = 0;
+	for (int j = rect.top; j < rect.bottom; j++) {
+		for (int i = rect.left; i < rect.right; i++) {
+			if (fm[j * nPitch + i] > nTh){
+				nSumX += i;
+				nSumY += j;
+				nCount++;
+				}
+		}
+	}
+
+	double dCenterX = (double)nSumX / nCount;
+	double dCenterY = (double)nSumY / nCount;
+
+	cout << dCenterX << "\t" << dCenterY << endl;
+}
+
+#include <thread>
+void threadProcess(CWnd* pParent, CRect rect, int* nRet) {
+	CgPrjDlg* pWnd = (CgPrjDlg*)pParent;
+	*nRet = pWnd->processImg(rect);
+}
+
+void CgPrjDlg::OnBnClickedBtnThread()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	auto start = system_clock::now();
+
+	int nImageSize = 4096 * 4;
+	CRect rect(0, 0, nImageSize, nImageSize);
+	CRect rt[4];
+	int nRet[4];
+	for (int k = 0; k < 4; k++) {
+		rt[k] = rect;
+		rt[k].OffsetRect(nImageSize * (k % 2), nImageSize * int(k / 2));
+	}	// 약간 수학적 내용 이해하고 넘어가면 좋긴함. 별거 아니긴함. 외워도됨
+
+	// 이렇게 하나하나 해주는건 빡쎄니깐 위처럼
+	/*rt[0].SetRect(0, 0, nImageSize, nImageSize);
+	rt[1].SetRect(nImageSize, 0, nImageSize*2, nImageSize);
+	rt[2].SetRect(0, nImageSize, nImageSize, nImageSize*2);
+	rt[3].SetRect(nImageSize, 0, nImageSize*2, nImageSize);*/
+
+	thread _thread0(threadProcess, this, rt[0], &nRet[0]);	// 좌상단
+	thread _thread1(threadProcess, this, rt[1], &nRet[1]);	// 우상단
+	thread _thread2(threadProcess, this, rt[2], &nRet[2]);	// 좌하단
+	thread _thread3(threadProcess, this, rt[3], &nRet[3]);	// 우하단
+
+	_thread0.join();
+	_thread1.join();
+	_thread2.join();
+	_thread3.join();
+
+	int nSum = 0;
+	for (int i = 0; i < 4; i++)
+		nSum += nRet[i];
+
+	auto end = system_clock::now();
+	auto millisec = duration_cast<milliseconds>(end - start);
+	cout << "main:: " << nSum << "\t" << millisec.count() * 0.001 << "sec" << endl;
+
+}
+
+int CgPrjDlg::processImg(CRect rect) {
+	auto start = system_clock::now();
+
+	CProcess process;
+
+	int nRet = process.getStarInfo(&m_pDlgImage->m_image, 0, rect);
+
+	auto end = system_clock::now();
+	auto millisec = duration_cast<milliseconds>(end - start);
+	cout << "thread: " << nRet << "\t" << millisec.count() * 0.001 << "sec" << endl;
+
+	return nRet;
 }
